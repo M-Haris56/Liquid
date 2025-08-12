@@ -1,0 +1,389 @@
+{
+  "article": [],
+  "blog": [],
+  "collection": [
+    {
+      "key": "dimensions",
+      "namespace": "custom",
+      "name": "Dimensions",
+      "description": "Dimensions for collection pages",
+      "type": {
+        "name": "multi_line_text_field",
+        "category": "TEXT"
+      }
+    },
+    {
+      "key": "dimensions",
+      "namespace": "my_field",
+      "name": "Dimensions",
+      "description": "Hot tub dimensions",
+      "type": {
+        "name": "multi_line_text_field",
+        "category": "TEXT"
+      }
+    },
+    {
+      "key": "short_description",
+      "namespace": "custom",
+      "name": "short_description",
+      "description": "",
+      "type": {
+        "name": "multi_line_text_field",
+        "category": "TEXT"
+      }
+    }
+  ],
+  "company": [],
+  "company_location": [],
+  "location": [],
+  "market": [],
+  "order": [],
+  "page": [
+    {
+      "key": "fbt",
+      "namespace": "custom",
+      "name": "FBT",
+      "description": "testing FBT",
+      "type": {
+        "name": "page_reference",
+        "category": "REFERENCE"
+      }
+    }
+  ],
+  "product": [
+    {
+      "key": "dimensions",
+      "namespace": "custom",
+      "name": "dimensions",
+      "description": "testing",
+      "type": {
+        "name": "list.dimension",
+        "category": "MEASUREMENT"
+      }
+    },
+    {
+      "key": "dimension",
+      "namespace": "my_field",
+      "name": "dimension",
+      "description": "Hot tub lenth",
+      "type": {
+        "name": "multi_line_text_field",
+        "category": "TEXT"
+      }
+    },
+    {
+      "key": "faq",
+      "namespace": "custom",
+      "name": "faq",
+      "description": "Unique Faqs for every product page",
+      "type": {
+        "name": "page_reference",
+        "category": "REFERENCE"
+      }
+    },
+    {
+      "key": "testing_meta_field",
+      "namespace": "custom",
+      "name": "testing meta field",
+      "description": "",
+      "type": {
+        "name": "single_line_text_field",
+        "category": "TEXT"
+      }
+    },
+    {
+      "key": "feature",
+      "namespace": "custom",
+      "name": "Feature",
+      "description": "Features of Products",
+      "type": {
+        "name": "multi_line_text_field",
+        "category": "TEXT"
+      }
+    },
+    {
+      "key": "product_feature",
+      "namespace": "custom",
+      "name": "Product Feature",
+      "description": "this is the feature of products",
+      "type": {
+        "name": "multi_line_text_field",
+        "category": "TEXT"
+      }
+    },
+    {
+      "key": "bonus_money",
+      "namespace": "custom",
+      "name": "Bonus Price",
+      "description": "This is the app metafield",
+      "type": {
+        "name": "number_integer",
+        "category": "NUMBER"
+      }
+    },
+    {
+      "key": "dummy_video",
+      "namespace": "custom",
+      "name": "Dummy Video",
+      "description": "",
+      "type": {
+        "name": "file_reference",
+        "category": "REFERENCE"
+      }
+    },
+    {
+      "key": "custom_name_product",
+      "namespace": "custom",
+      "name": "Custom Name Product",
+      "description": "",
+      "type": {
+        "name": "boolean",
+        "category": "TRUE_FALSE"
+      }
+    },
+    {
+      "key": "products_bundle",
+      "namespace": "custom",
+      "name": "Products Bundle",
+      "description": "",
+      "type": {
+        "name": "list.product_reference",
+        "category": "REFERENCE"
+      }
+    },
+    {
+      "key": "queries",
+      "namespace": "shopify--discovery--product_search_boost",
+      "name": "Search product boosts",
+      "description": "List of search queries for which a product gets higher rank in search results",
+      "type": {
+        "name": "list.single_line_text_field",
+        "category": "TEXT"
+      }
+    },
+    {
+      "key": "related_products",
+      "namespace": "shopify--discovery--product_recommendation",
+      "name": "Related products",
+      "description": "List of related products",
+      "type": {
+        "name": "list.product_reference",
+        "category": "REFERENCE"
+      }
+    },
+    {
+      "key": "related_products_display",
+      "namespace": "shopify--discovery--product_recommendation",
+      "name": "Related products settings",
+      "description": "Determines how related products are displayed along with algorithmic product recommendations",
+      "type": {
+        "name": "single_line_text_field",
+        "category": "TEXT"
+      }
+    },
+    {
+      "key": "complementary_products",
+      "namespace": "shopify--discovery--product_recommendation",
+      "name": "Complementary products",
+      "description": "List of complementary products",
+      "type": {
+        "name": "list.product_reference",
+        "category": "REFERENCE"
+      }
+    },
+    {
+      "key": "size",
+      "namespace": "shopify",
+      "name": "Size",
+      "description": "Used to specify the size of a product, such as 0-3 months or Extra large (XL)",
+      "type": {
+        "name": "list.metaobject_reference",
+        "category": "REFERENCE"
+      }
+    },
+    {
+      "key": "accessory-size",
+      "namespace": "shopify",
+      "name": "Accessory size",
+      "description": "Defines the size of an accessory product, such as one size or compact",
+      "type": {
+        "name": "list.metaobject_reference",
+        "category": "REFERENCE"
+      }
+    },
+    {
+      "key": "shoe-size",
+      "namespace": "shopify",
+      "name": "Shoe size",
+      "description": "Used to define the size of footwear, e.g. Extra large (XL), 9.5",
+      "type": {
+        "name": "list.metaobject_reference",
+        "category": "REFERENCE"
+      }
+    },
+    {
+      "key": "headwear-features",
+      "namespace": "shopify",
+      "name": "Headwear features",
+      "description": "Highlights unique features of headwear, e.g. collapsible, versatile",
+      "type": {
+        "name": "list.metaobject_reference",
+        "category": "REFERENCE"
+      }
+    },
+    {
+      "key": "input_note",
+      "namespace": "custom",
+      "name": "input_note",
+      "description": "",
+      "type": {
+        "name": "single_line_text_field",
+        "category": "TEXT"
+      }
+    },
+    {
+      "key": "sale_badge",
+      "namespace": "custom",
+      "name": "sale_badge",
+      "description": "",
+      "type": {
+        "name": "single_line_text_field",
+        "category": "TEXT"
+      }
+    },
+    {
+      "key": "happy_customers",
+      "namespace": "custom",
+      "name": "happy customers",
+      "description": "",
+      "type": {
+        "name": "single_line_text_field",
+        "category": "TEXT"
+      }
+    },
+    {
+      "key": "videos_dog",
+      "namespace": "custom",
+      "name": "dog videos",
+      "description": "",
+      "type": {
+        "name": "file_reference",
+        "category": "REFERENCE"
+      }
+    },
+    {
+      "key": "product_video",
+      "namespace": "custom",
+      "name": "video metafeilds",
+      "description": "",
+      "type": {
+        "name": "file_reference",
+        "category": "REFERENCE"
+      }
+    },
+    {
+      "key": "dog_videos",
+      "namespace": "custom",
+      "name": "videos",
+      "description": "",
+      "type": {
+        "name": "list.file_reference",
+        "category": "REFERENCE"
+      }
+    },
+    {
+      "key": "compatible-paper-size",
+      "namespace": "shopify",
+      "name": "Compatible paper size",
+      "description": "Specifies the paper sizes a device can accommodate, typically for printers; e.g. A4, postcard",
+      "type": {
+        "name": "list.metaobject_reference",
+        "category": "REFERENCE"
+      }
+    },
+    {
+      "key": "color-pattern",
+      "namespace": "shopify",
+      "name": "Color",
+      "description": "Defines the primary color or pattern, such as blue or striped",
+      "type": {
+        "name": "list.metaobject_reference",
+        "category": "REFERENCE"
+      }
+    },
+    {
+      "key": "white_image",
+      "namespace": "custom",
+      "name": "White image",
+      "description": "",
+      "type": {
+        "name": "file_reference",
+        "category": "REFERENCE"
+      }
+    },
+    {
+      "key": "black_image",
+      "namespace": "custom",
+      "name": "Black Image",
+      "description": "",
+      "type": {
+        "name": "file_reference",
+        "category": "REFERENCE"
+      }
+    },
+    {
+      "key": "animated_background_image",
+      "namespace": "custom",
+      "name": "Animated Background Image",
+      "description": "",
+      "type": {
+        "name": "file_reference",
+        "category": "REFERENCE"
+      }
+    }
+  ],
+  "variant": [
+    {
+      "key": "existence",
+      "namespace": "custom",
+      "name": "Existence",
+      "description": "",
+      "type": {
+        "name": "boolean",
+        "category": "TRUE_FALSE"
+      }
+    },
+    {
+      "key": "greyout_color",
+      "namespace": "custom",
+      "name": "Greyout color",
+      "description": "",
+      "type": {
+        "name": "single_line_text_field",
+        "category": "TEXT"
+      }
+    },
+    {
+      "key": "greyout_size",
+      "namespace": "custom",
+      "name": "Greyout Size",
+      "description": "",
+      "type": {
+        "name": "single_line_text_field",
+        "category": "TEXT"
+      }
+    }
+  ],
+  "shop": [
+    {
+      "key": "fastbundleconf",
+      "namespace": "rbrfb",
+      "name": "Fast Bundle Conf",
+      "description": "App's config for the widgets",
+      "type": {
+        "name": "json",
+        "category": "JSON"
+      }
+    }
+  ]
+}

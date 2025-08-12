@@ -1,0 +1,123 @@
+<div class="page-width">
+  <h1>{{ section.settings.heading }}</h1>
+  <div class="container">
+    {% for block in section.blocks %}
+      {% case block.type %}
+        {% when 'imageone' %}
+          <div class="block-container">
+            {% if block.settings.block_imageone %}
+              <img 
+                src="{{ block.settings.block_imageone | image_url: width: 1200 }}" 
+                alt="Image"
+              >
+            {% endif %}
+            <p>{{ block.settings.para_text }}</p>
+            <p>{{ block.settings.price_text }}</p>
+          </div>
+      {% endcase %}
+    {% endfor %}
+  </div>
+</div>
+
+<style>
+  .page-width .container {
+    display: flex;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 25px;
+  }
+
+  .page-width .container .block-container {
+    width: 22%;
+    min-width: 220px;
+    overflow: hidden; 
+  }
+
+  .page-width .container .block-container img {
+    width: 100%;
+    height: auto;
+    object-fit: cover;
+    border-radius: 5px;
+    display: block;
+    transition: transform 0.4s ease, box-shadow 0.4s ease;
+  }
+
+  .page-width .container .block-container img:hover {
+    transform: scale(1.05); 
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2); 
+  }
+
+  /* Responsive */
+  @media (max-width: 1024px) {
+    .page-width .container .block-container {
+      width: 45%;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .page-width .container {
+      justify-content: center;
+    }
+    .page-width .container .block-container {
+      width: 100%;
+    }
+  }
+</style>
+
+
+
+
+{% schema %}
+  {
+    "name": "My Fifth Practice",
+    "tag": "section",
+    "settings": [
+      {
+        "type": "text",
+        "id": "heading",
+        "label": "Heading",
+        "default": "Welcome"
+      }
+    ],
+    "blocks": [
+      {
+        "type": "imageone",
+        "name": "First Image",
+        "settings": [
+          {
+            "type": "image_picker",
+            "id": "block_imageone",
+            "label": "First Image"
+          },
+          {
+            "type": "richtext",
+            "id": "para_text",
+            "label": "Paragraph Text",
+            "default": "<p>Welcome to my Shopify store</p>"
+          },
+          {
+            "type": "richtext",
+            "id": "price_text",
+            "label": "Price Text",
+            "default": "<p>Welcome to my Shopify store</p>"
+          },
+          {
+            "type": "text",
+            "id": "buttonone_text",
+            "label": "Button Text",
+            "default": "READ NOW"
+          }, {
+            "type": "url",
+            "id": "buttonone_link",
+            "label": "Button Link"
+          }
+        ]
+      }
+    ],
+    "presets": [
+      {
+        "name": "My Fifth Practice"
+      }
+    ]
+  }
+{% endschema %}
