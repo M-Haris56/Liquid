@@ -302,11 +302,11 @@
     <a class="skip-to-content-link button visually-hidden" href="#MainContent">
       {{ 'accessibility.skip_to_text' | t }}
     </a>
-
-    {%- if settings.cart_type == 'drawer' -%}
-      {%- render 'cart-drawer' -%}
-    {%- endif -%}
-
+      <div id="shopify-section-cart-drawer" class="shopify-section">
+          {%- if settings.cart_type == 'drawer' -%}
+            {%- render 'cart-drawer' -%}
+          {%- endif -%}
+      </div>
     {% sections 'header-group' %}
 
     <main id="MainContent" class="content-for-layout focus-none" role="main" tabindex="-1">

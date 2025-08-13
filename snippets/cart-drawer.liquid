@@ -113,7 +113,7 @@
 
      </style>
      
-        {% assign free_shipping_threshold = 50000 %}
+        {% assign free_shipping_threshold = 500000 %}
          {% assign cart_total = 0 %}
         {% for item in cart.items %}
           {% if item.requires_shipping %}
@@ -127,7 +127,7 @@
           
         {% endif %}
           {% assign amount_remaining = free_shipping_threshold |  minus: amount_remaining %}
-          {% assign percentage_remaining = 100 | times: difference |  divided_by: free_shipping_threshold%}%
+          {% assign percentage_remaining = 100 | times: difference |  divided_by: free_shipping_threshold%}
       
        <div class="free_shipping">
       <h4>  you need <strong>{{amount_remaining |  money_with_currency}}</strong> to get free shipping</h4>
@@ -540,6 +540,46 @@
           <div id="CartDrawer-CartErrors" role="alert"></div>
         </form>
       </cart-drawer-items>
+            {% comment %}.......... up sells ...........  {% endcomment %}
+
+            <style>
+              .cart_upsells .product-card-wrapper{
+                min-width: 285px;
+              }
+              .quick-add-modal[open][data-section="cart=drawer"]{
+                z-index: 1001;
+              }
+            </style>
+                      {{ 'quick-add.css' | asset_url | stylesheet_tag }}
+                       <script src="{{ 'quick-add.js' | asset_url }}" defer="defer"></script>
+                       <script src="{{ 'product-form.js' | asset_url }}" defer="defer"></script>
+
+
+                  <div style="display: flex; flex-direction:column; gap:10px; background:#fdf9f9">
+                        <h4 style="margin: 0; font-weight: bold;">You may also like these</h4>
+                    <div class="cart_upsells" style="display: flex; gap:20px; overflow:scroll;">
+                        {% for item in cart.items %}
+                          {% for upsell in item.product.metafields.custom.upsells.value %}
+                            {% assign upsell_already_in_cart = cart | line_item_for:upsell%}%
+                            {% if upsell_already_in_car == blank %}                              
+                            {% render 'card-product',
+                              card_product: upsell,
+                              show_vendor: false,
+                              show_rating: false, 
+                              lazy_load: lazy_load,
+                              quick_add:"standard" ,
+                              section_id: "line_item",
+                              horizontal_class:true
+                             %}
+                            {%endif%}
+                          {% endfor %}
+                        {% endfor %}
+                    </div>
+                  </div>
+
+                  
+
+             {% comment %}.......... up sells End ...........  {% endcomment %}
       <div class="drawer__footer">
         {%- if settings.show_cart_note -%}
           <details id="Details-CartDrawer">
