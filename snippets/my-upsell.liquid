@@ -1,0 +1,262 @@
+{%- comment -%}
+  Upsell via product metafield: custom.my_up_sell
+  Robust handling for:
+  - single product_reference
+  - list.product_reference (takes first)
+  Shows image, title, price, and AJAX Add to Cart.
+{%- endcomment -%}
+{%- assign mf = product.metafields.custom.my_up_sell -%}
+{%- assign upsell = nil -%}
+
+{%- if mf and mf != blank -%}
+  {%- assign val = mf.value -%}
+  {%- if val and val != blank -%}
+    {%- if mf.type and mf.type contains 'list.' -%}
+      {%- assign upsell = val | first -%}
+    {%- else -%}
+      {%- assign upsell = val -%}
+    {%- endif -%}
+  {%- endif -%}
+{%- endif -%}
+
+{%- if upsell and upsell != blank -%}
+  <div class="upsell-wrap" id="upsell-{{ upsell.id }}">
+    <div class="upsell-card">
+      <a href="{{ upsell.url }}" class="upsell-image" aria-label="{{ upsell.title | escape }}">
+        {%- if upsell.featured_image -%}
+          {%- assign img = upsell.featured_image -%}
+          <img
+            src="{{ img | image_url: width: 360 }}"
+            srcset="
+              {{ img | image_url: width: 165 }} 165w,
+              {{ img | image_url: width: 360 }} 360w,
+              {{ img | image_url: width: 533 }} 533w,
+              {{ img | image_url: width: 720 }} 720w,
+              {{ img | image_url: width: 940 }} 940w,
+              {{ img | image_url: width: 1200 }} 1200w"
+            sizes="(max-width: 640px) 100vw, 360px"
+            alt="{{ upsell.title | escape }}"
+            loading="lazy"
+            class="upsell-img"
+          >
+        {%- else -%}
+          <div class="upsell-placeholder" aria-hidden="true">No image</div>
+        {%- endif -%}
+      </a>
+
+      <div class="upsell-info">
+        <h3 class="upsell-title">
+          <a href="{{ upsell.url }}">{{ upsell.title }}</a>
+        </h3>
+
+        <div class="upsell-price">
+          {%- assign now_price = upsell.price -%}
+          {%- assign compare = upsell.compare_at_price -%}
+          {%- if compare and compare > now_price -%}
+            <span class="upsell-price-was">{{ compare | money }}</span>
+          {%- endif -%}
+          <span class="upsell-price-now">{{ now_price | money }}</span>
+        </div>
+
+        {%- assign v = upsell.selected_or_first_available_variant -%}
+       
+      </div>
+    </div>
+  </div>
+
+  {% comment %}
+  Renders product buy-buttons.
+  Accepts:
+  - product: {Object} product object.
+  - block: {Object} passing the block information.
+  - product_form_id: {String} product form id.
+  - section_id: {String} id of section to which this snippet belongs.
+  - show_pickup_availability: {Boolean} for the pickup availability. If true the pickup availability is rendered, false - not rendered (optional).
+
+  Usage:
+  {% render 'buy-buttons', block: block, product: product, product_form_id: product_form_id, section_id: section.id, show_pickup_availability: true %}
+{% endcomment %}
+<div {{ block.shopify_attributes }}>
+  {%- if product != blank -%}
+    {%- liquid
+      assign gift_card_recipient_feature_active = false
+      if block.settings.show_gift_card_recipient and product.gift_card?
+        assign gift_card_recipient_feature_active = true
+      endif
+
+      assign show_dynamic_checkout = false
+      if block.settings.show_dynamic_checkout and gift_card_recipient_feature_active == false
+        assign show_dynamic_checkout = true
+      endif
+    -%}
+
+    <product-form
+      class="product-form"
+      data-hide-errors="{{ gift_card_recipient_feature_active }}"
+      data-section-id="{{ section.id }}"
+    >
+      <div class="product-form__error-message-wrapper" role="alert" hidden>
+        <span class="svg-wrapper">
+          {{- 'icon-error.svg' | inline_asset_content -}}
+        </span>
+        <span class="product-form__error-message"></span>
+      </div>
+
+      {%- form 'product',
+        product,
+        id: product_form_id,
+        class: 'form',
+        novalidate: 'novalidate',
+        data-type: 'add-to-cart-form'
+      -%}
+        <input
+          type="hidden"
+          name="id"
+          value="{{ product.selected_or_first_available_variant.id }}"
+          {% if product.selected_or_first_available_variant.available == false
+            or quantity_rule_soldout
+            or product.selected_or_first_available_variant == null
+          %}
+            disabled
+          {% endif %}
+          class="product-variant-id"
+        >
+
+        {%- if gift_card_recipient_feature_active -%}
+          {%- render 'gift-card-recipient-form', product: product, form: form, section: section -%}
+        {%- endif -%}
+
+        <div class="product-form__buttons">
+          {%- liquid
+            assign check_against_inventory = true
+            if product.selected_or_first_available_variant.inventory_management != 'shopify' or product.selected_or_first_available_variant.inventory_policy == 'continue'
+              assign check_against_inventory = false
+            endif
+            if product.selected_or_first_available_variant.quantity_rule.min > product.selected_or_first_available_variant.inventory_quantity and check_against_inventory
+              assign quantity_rule_soldout = true
+            endif
+          -%}
+          <button
+            id="ProductSubmitButton-{{ section_id }}"
+            type="submit"
+            name="add"
+            class="product-form__submit button button--full-width {% if show_dynamic_checkout %}button--secondary{% else %}button--primary{% endif %}"
+            {% if product.selected_or_first_available_variant.available == false
+              or quantity_rule_soldout
+              or product.selected_or_first_available_variant == null
+            %}
+              disabled
+            {% endif %}
+          >
+            <span>
+              {%- if product.selected_or_first_available_variant == null -%}
+                {{ 'products.product.unavailable' | t }}
+              {%- elsif product.selected_or_first_available_variant.available == false or quantity_rule_soldout -%}
+                {{ 'products.product.sold_out' | t }}
+              {%- else -%}
+                {{ 'products.product.add_to_cart' | t }}
+              {%- endif -%}
+            </span>
+            {%- render 'loading-spinner' -%}
+          </button>
+          {%- if show_dynamic_checkout -%}
+            {{ form | payment_button }}
+          {%- endif -%}
+        </div>
+      {%- endform -%}
+    </product-form>
+  {%- else -%}
+    <div class="product-form">
+      <div class="product-form__buttons form">
+        <button
+          type="submit"
+          name="add"
+          class="product-form__submit button button--full-width button--primary"
+          disabled
+        >
+          {{ 'products.product.sold_out' | t }}
+        </button>
+      </div>
+    </div>
+  {%- endif -%}
+
+  {%- if show_pickup_availability -%}
+    {{ 'component-pickup-availability.css' | asset_url | stylesheet_tag }}
+
+    {%- assign pick_up_availabilities = product.selected_or_first_available_variant.store_availabilities
+      | where: 'pick_up_enabled', true
+    -%}
+
+    <pickup-availability
+      class="product__pickup-availabilities quick-add-hidden"
+      {% if product.selected_or_first_available_variant.available and pick_up_availabilities.size > 0 %}
+        available
+      {% endif %}
+      data-root-url="{{ routes.root_url }}"
+      data-variant-id="{{ product.selected_or_first_available_variant.id }}"
+      data-has-only-default-variant="{{ product.has_only_default_variant }}"
+      data-product-page-color-scheme="gradient color-{{ section.settings.color_scheme }}"
+    >
+      <template>
+        <pickup-availability-preview class="pickup-availability-preview">
+          <span class="svg-wrapper">
+            {{- 'icon-unavailable.svg' | inline_asset_content -}}
+          </span>
+          <div class="pickup-availability-info">
+            <p class="caption-large">{{ 'products.product.pickup_availability.unavailable' | t }}</p>
+            <button class="pickup-availability-button link link--text underlined-link">
+              {{ 'products.product.pickup_availability.refresh' | t }}
+            </button>
+          </div>
+        </pickup-availability-preview>
+      </template>
+    </pickup-availability>
+
+    <script src="{{ 'pickup-availability.js' | asset_url }}" defer="defer"></script>
+  {%- endif -%}
+</div>
+
+
+  <style>
+    .upsell-wrap { margin-top: 1.5rem; }
+    .upsell-card {
+      display: grid;
+      grid-template-columns: 120px 1fr;
+      gap: 1rem;
+      align-items: start;
+      padding: 1rem;
+      border: 1px solid rgba(0,0,0,.08);
+      border-radius: 14px;
+      background: rgba(0,0,0,.02);
+    }
+    .upsell-image { display:block }
+    .upsell-img { width: 100%; height: auto; display: block; border-radius: 10px; }
+    .upsell-title { font-size: 1rem; margin: 0 0 .25rem; line-height: 1.3; }
+    .upsell-title a { text-decoration: none; }
+    .upsell-price { margin: .25rem 0 .75rem; display: flex; gap: .5rem; align-items: baseline; }
+    .upsell-price-was { text-decoration: line-through; opacity: .6; }
+    .upsell-price-now { font-weight: 600; }
+    .upsell-btn {
+      padding: .65rem 1rem;
+      border: 0;
+      border-radius: 999px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .upsell-btn[disabled] { opacity: .6; cursor: not-allowed; }
+    @media (max-width: 640px){
+      .upsell-card { grid-template-columns: 80px 1fr; }
+    }
+  </style>
+
+{%- else -%}
+  {%- comment -%}
+    Debug helper: Theme Editor me (Customize) khulay to yeh hint dikhay.
+  {%- endcomment -%}
+  {%- if request.design_mode -%}
+    <small style="display:block;margin-top:1rem;opacity:.7">
+      Upsell: <code>custom.my_up_sell</code> is empty on this product. Select a product in metafield.
+      <br>Value debug: <pre style="white-space:pre-wrap;margin:.25rem 0 0">{{ mf | json }}</pre>
+    </small>
+  {%- endif -%}
+{%- endif -%}

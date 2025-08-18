@@ -350,6 +350,56 @@
         "name": "list.product_reference",
         "category": "REFERENCE"
       }
+    },
+    {
+      "key": "delivery_days",
+      "namespace": "custom",
+      "name": "Delivery Days",
+      "description": "",
+      "type": {
+        "name": "list.single_line_text_field",
+        "category": "TEXT"
+      }
+    },
+    {
+      "key": "delivery_hours",
+      "namespace": "custom",
+      "name": "Delivery Hours",
+      "description": "",
+      "type": {
+        "name": "multi_line_text_field",
+        "category": "TEXT"
+      }
+    },
+    {
+      "key": "time_get",
+      "namespace": "custom",
+      "name": "Time Get",
+      "description": "",
+      "type": {
+        "name": "list.single_line_text_field",
+        "category": "TEXT"
+      }
+    },
+    {
+      "key": "the_practices",
+      "namespace": "custom",
+      "name": "The Practices",
+      "description": "",
+      "type": {
+        "name": "single_line_text_field",
+        "category": "TEXT"
+      }
+    },
+    {
+      "key": "my_up_sell",
+      "namespace": "custom",
+      "name": "my-up-sell",
+      "description": "",
+      "type": {
+        "name": "product_reference",
+        "category": "REFERENCE"
+      }
     }
   ],
   "variant": [
