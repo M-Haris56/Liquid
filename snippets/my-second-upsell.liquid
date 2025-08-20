@@ -1,0 +1,276 @@
+{%- comment -%}
+  SNIPPET: my-second-upsell (upsell-only)
+  Metafield: custom.my_second_upsell (also tries custom.my-second-upsell)
+  - Supports single product_reference & list.product_reference
+  - Falls back to VARIANT metafield if product metafield is empty
+  - Renders multiple images, title, price, and AJAX add-to-cart for upsell item(s)
+{%- endcomment -%}
+
+{%- assign subject_product = product | default: card_product | default: product_card_product | default: item -%}
+
+{%- if subject_product and subject_product != blank -%}
+  {%- comment -%} Try PRODUCT metafield (underscore & hyphen) {%- endcomment -%}
+  {%- assign mf_p_u = subject_product.metafields['custom']['my_second_upsell'] -%}
+  {%- assign mf_p_h = subject_product.metafields['custom']['my-second-upsell'] -%}
+  {%- assign mf = mf_p_u | default: mf_p_h -%}
+
+  {%- assign v_subject = subject_product.selected_or_first_available_variant -%}
+
+  {%- comment -%} If product metafield empty, try VARIANT metafield {%- endcomment -%}
+  {%- if mf == blank or mf.value == blank -%}
+    {%- if v_subject -%}
+      {%- assign mf_v_u = v_subject.metafields['custom']['my_second_upsell'] -%}
+      {%- assign mf_v_h = v_subject.metafields['custom']['my-second-upsell'] -%}
+      {%- assign mf = mf | default: mf_v_u | default: mf_v_h -%}
+    {%- endif -%}
+  {%- endif -%}
+{%- endif -%}
+
+{%- if mf and mf != blank and mf.value != blank -%}
+  {%- assign val = mf.value -%}
+
+  {%- if mf.type and mf.type contains 'list.' -%}
+    {%- comment -%} MULTIPLE UPSELLS {%- endcomment -%}
+    {%- for upsell in val -%}
+      {%- assign v = upsell.selected_or_first_available_variant -%}
+      {%- assign plan_id = nil -%}
+      {%- if v and v.selling_plan_allocations and v.selling_plan_allocations.size > 0 -%}
+        {%- assign plan_id = v.selling_plan_allocations.first.selling_plan.id -%}
+      {%- endif -%}
+
+      <div class="upsell-wrap" id="upsell-{{ upsell.id }}">
+        <div class="upsell-card">
+          <!-- LEFT: Check -->
+          <div class="upsell-check-col">
+            {%- if v and v.available -%}
+              <label class="upsell-check-wrap" aria-label="{{ 'products.product.add_to_cart' | t }}">
+                <input
+                  type="checkbox"
+                  class="upsell-check sr-only"
+                  data-variant-id="{{ v.id }}"
+                  data-qty="{{ v.quantity_rule.min | default: 1 }}"
+                  data-step="{{ v.quantity_rule.increment | default: 1 }}"
+                  {% if plan_id %}data-selling-plan="{{ plan_id }}"{% endif %}
+                >
+                <span class="custom-check" aria-hidden="true"></span>
+              </label>
+            {%- else -%}
+              <span class="upsell-badge-soldout">{{ 'products.product.sold_out' | t }}</span>
+            {%- endif -%}
+          </div>
+
+          <!-- MIDDLE: Multiple Images -->
+          <div class="upsell-images" aria-label="{{ upsell.title | escape }}">
+            {%- if upsell.images and upsell.images.size > 0 -%}
+              {%- for image in upsell.images limit: 4 -%}
+                <a href="{{ upsell.url }}" class="upsell-image">
+                  <img
+                    src="{{ image | image_url: width: 360 }}"
+                    srcset="
+                      {{ image | image_url: width: 165 }} 165w,
+                      {{ image | image_url: width: 360 }} 360w,
+                      {{ image | image_url: width: 533 }} 533w,
+                      {{ image | image_url: width: 720 }} 720w,
+                      {{ image | image_url: width: 940 }} 940w,
+                      {{ image | image_url: width: 1200 }} 1200w"
+                    sizes="(max-width: 640px) 100vw, 360px"
+                    alt="{{ upsell.title | escape }}"
+                    loading="lazy"
+                    class="upsell-img"
+                  >
+                </a>
+              {%- endfor -%}
+            {%- else -%}
+              <div class="upsell-placeholder" aria-hidden="true">No image</div>
+            {%- endif -%}
+          </div>
+
+          <!-- RIGHT: Info -->
+          <div class="upsell-info">
+            <h3 class="upsell-title"><a href="{{ upsell.url }}">{{ upsell.title }}</a></h3>
+            <div class="upsell-price">
+              {%- assign now_price = upsell.price -%}
+              {%- assign compare = upsell.compare_at_price -%}
+              {%- if compare and compare > now_price -%}
+                <span class="upsell-price-was">{{ compare | money }}</span>
+              {%- endif -%}
+              <span class="upsell-price-now">{{ now_price | money }}</span>
+            </div>
+            {% comment %} <small class="upsell-msg" hidden></small> {% endcomment %}
+          </div>
+        </div>
+      </div>
+
+      <script>
+        (function() {
+          const wrap = document.getElementById('upsell-{{ upsell.id }}'); if (!wrap) return;
+          const cb = wrap.querySelector('.upsell-check[data-variant-id]'); const msg = wrap.querySelector('.upsell-msg'); if (!cb) return;
+
+          function normalizeQty(el){const min=parseInt(el.dataset.qty||'1',10)||1;const step=parseInt(el.dataset.step||'1',10)||1;let q=min;if(q%step!==0)q=Math.ceil(q/step)*step;return q;}
+          function extractError(data){if(!data)return'Could not add to cart.';if(data.description)return data.description;if(data.message)return data.message;if(typeof data.errors==='string')return data.errors;if(typeof data.errors==='object'){try{return Object.values(data.errors).flat().join(' ');}catch(e){}}return'Could not add to cart.';}
+
+          cb.addEventListener('change', async () => {
+            if (!cb.checked) return;
+            const variantId=cb.dataset.variantId; const sellingPlan=cb.dataset.sellingPlan; const quantity=normalizeQty(cb);
+            cb.disabled=true; if(msg){msg.hidden=true; msg.textContent='';}
+            try{
+              const item={id:Number(variantId), quantity}; if(sellingPlan) item.selling_plan=Number(sellingPlan);
+              const res=await fetch('{{ routes.cart_add_url }}.js',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json','Accept':'application/json','X-Requested-With':'XMLHttpRequest'},body:JSON.stringify({items:[item]})});
+              const data=await res.json(); if(!res.ok) throw data;
+              document.dispatchEvent(new CustomEvent('cart:added',{detail:data}));
+              const drawer=document.querySelector('cart-drawer, cart-notification'); if(drawer && typeof drawer.renderContents==='function'){await drawer.renderContents(data);}
+              if(msg){msg.textContent='{{ "products.product.added_to_cart" | t | escape }}'; msg.hidden=false;}
+            }catch(err){ if(msg){msg.textContent=extractError(err); msg.hidden=false;} cb.checked=false; } finally{ cb.disabled=false; }
+          });
+        })();
+      </script>
+    {%- endfor -%}
+
+  {%- else -%}
+    {%- comment -%} SINGLE UPSELL {%- endcomment -%}
+    {%- assign upsell = val -%}
+    {%- assign v = upsell.selected_or_first_available_variant -%}
+    {%- assign plan_id = nil -%}
+    {%- if v and v.selling_plan_allocations and v.selling_plan_allocations.size > 0 -%}
+      {%- assign plan_id = v.selling_plan_allocations.first.selling_plan.id -%}
+    {%- endif -%}
+
+    <div class="upsell-wrap" id="upsell-{{ upsell.id }}">
+      <div class="upsell-card">
+        <div class="upsell-check-col">
+          {%- if v and v.available -%}
+            <label class="upsell-check-wrap" aria-label="{{ 'products.product.add_to_cart' | t }}">
+              <input
+                type="checkbox"
+                class="upsell-check sr-only"
+                data-variant-id="{{ v.id }}"
+                data-qty="{{ v.quantity_rule.min | default: 1 }}"
+                data-step="{{ v.quantity_rule.increment | default: 1 }}"
+                {% if plan_id %}data-selling-plan="{{ plan_id }}"{% endif %}
+              >
+              <span class="custom-check" aria-hidden="true"></span>
+            </label>
+          {%- else -%}
+            <span class="upsell-badge-soldout">{{ 'products.product.sold_out' | t }}</span>
+          {%- endif -%}
+        </div>
+
+        <!-- MULTIPLE IMAGES -->
+        <div class="upsell-images" aria-label="{{ upsell.title | escape }}">
+          {%- if upsell.images and upsell.images.size > 0 -%}
+            {%- for image in upsell.images limit: 4 -%}
+              <a href="{{ upsell.url }}" class="upsell-image">
+                <img
+                  src="{{ image | image_url: width: 360 }}"
+                  srcset="
+                    {{ image | image_url: width: 165 }} 165w,
+                    {{ image | image_url: width: 360 }} 360w,
+                    {{ image | image_url: width: 533 }} 533w,
+                    {{ image | image_url: width: 720 }} 720w,
+                    {{ image | image_url: width: 940 }} 940w,
+                    {{ image | image_url: width: 1200 }} 1200w"
+                  sizes="(max-width: 640px) 100vw, 360px"
+                  alt="{{ upsell.title | escape }}"
+                  loading="lazy"
+                  class="upsell-img"
+                >
+              </a>
+            {%- endfor -%}
+          {%- else -%}
+            <div class="upsell-placeholder" aria-hidden="true">No image</div>
+          {%- endif -%}
+        </div>
+
+        <div class="upsell-info">
+          <h3 class="upsell-title"><a href="{{ upsell.url }}">{{ upsell.title }}</a></h3>
+          <div class="upsell-price">
+            {%- assign now_price = upsell.price -%}
+            {%- assign compare = upsell.compare_at_price -%}
+            {%- if compare and compare > now_price -%}
+              <span class="upsell-price-was">{{ compare | money }}</span>
+            {%- endif -%}
+            <span class="upsell-price-now">{{ now_price | money }}</span>
+          </div>
+          <small class="upsell-msg" hidden></small>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      (function() {
+        const wrap=document.getElementById('upsell-{{ upsell.id }}'); if(!wrap) return;
+        const cb=wrap.querySelector('.upsell-check[data-variant-id]'); const msg=wrap.querySelector('.upsell-msg'); if(!cb) return;
+
+        function normalizeQty(el){const min=parseInt(el.dataset.qty||'1',10)||1;const step=parseInt(el.dataset.step||'1',10)||1;let q=min;if(q%step!==0)q=Math.ceil(q/step)*step;return q;}
+        function extractError(data){if(!data)return'Could not add to cart.';if(data.description)return data.description;if(data.message)return data.message;if(typeof data.errors==='string')return data.errors;if(typeof data.errors==='object'){try{return Object.values(data.errors).flat().join(' ');}catch(e){}}return'Could not add to cart.';}
+
+        cb.addEventListener('change', async () => {
+          if(!cb.checked) return;
+          const variantId=cb.dataset.variantId; const sellingPlan=cb.dataset.sellingPlan; const quantity=normalizeQty(cb);
+          cb.disabled=true; if(msg){msg.hidden=true; msg.textContent='';}
+          try{
+            const item={id:Number(variantId), quantity}; if(sellingPlan) item.selling_plan=Number(sellingPlan);
+            const res=await fetch('{{ routes.cart_add_url }}.js',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json','Accept':'application/json','X-Requested-With':'XMLHttpRequest'},body:JSON.stringify({items:[item]})});
+            const data=await res.json(); if(!res.ok) throw data;
+            document.dispatchEvent(new CustomEvent('cart:added',{detail:data}));
+            const drawer=document.querySelector('cart-drawer, cart-notification'); if(drawer && typeof drawer.renderContents==='function'){await drawer.renderContents(data);}
+            if(msg){msg.textContent='{{ "products.product.added_to_cart" | t | escape }}'; msg.hidden=false;}
+          }catch(err){ if(msg){msg.textContent=extractError(err); msg.hidden=false;} cb.checked=false; } finally{ cb.disabled=false; }
+        });
+      })();
+    </script>
+  {%- endif -%}
+
+{%- else -%}
+  {%- if request.design_mode -%}
+    <small style="display:block;margin-top:.5rem;opacity:.7">
+      Upsell: No product passed to snippet.
+    </small>
+  {%- endif -%}
+{%- endif -%}
+
+{%- if request.design_mode -%}
+  <details style="margin:.5rem 0; opacity:.8;">
+    <summary>Upsell Debug (Theme Editor only)</summary>
+    <pre style="white-space:pre-wrap; font-size:12px; line-height:1.4;">
+Subject product: {{ subject_product.title }} (ID: {{ subject_product.id }})
+Product MF (my_second_upsell): {{ mf_p_u | json }}
+Product MF (my-second-upsell): {{ mf_p_h | json }}
+{% if v_subject %}Variant MF (my_second_upsell): {{ v_subject.metafields['custom']['my_second_upsell'] | json }}{% endif %}
+{% if v_subject %}Variant MF (my-second-upsell): {{ v_subject.metafields['custom']['my-second-upsell'] | json }}{% endif %}
+Chosen MF (final): {{ mf | json }}
+Chosen MF .value: {{ mf.value | json }}
+Chosen MF .type:  {{ mf.type }}
+    </pre>
+  </details>
+{%- endif -%}
+
+<style>
+  .upsell-wrap { margin-top: 1.5rem; }
+  .upsell-card { display:grid; grid-template-columns:44px minmax(120px,220px) 1fr; gap:1rem; align-items:center; padding:1rem; border:1px solid rgba(0,0,0,.08); border-radius:14px; background:rgba(0,0,0,.02); }
+  .upsell-check-col { display:flex; align-items:center; justify-content:center; }
+  .upsell-images { display:grid; grid-template-columns:repeat(2,1fr); gap:.5rem; }
+  .upsell-image { display:block; }
+  .upsell-img { width:100%; height:auto; display:block; border-radius:10px; }
+  .upsell-title { font-size:1rem; margin:0 0 .25rem; line-height:1.3; }
+  .upsell-title a { text-decoration:none; }
+  .upsell-price { margin:.25rem 0; display:flex; gap:.5rem; align-items:baseline; }
+  .upsell-price-was { text-decoration:line-through; opacity:.6; }
+  .upsell-price-now { font-weight:600; }
+  .upsell-msg { display:block; margin-top:.35rem; opacity:.8; }
+  .sr-only { position:absolute !important; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+  .upsell-check-wrap { display:inline-flex; align-items:center; cursor:pointer; }
+  .custom-check { display:inline-block; width:22px; height:22px; border-radius:6px; border:2px solid rgba(0,0,0,.35); background:#fff; position:relative; transition: box-shadow .2s, transform .06s, border-color .2s, background .2s; }
+  .upsell-check-wrap:hover .custom-check { box-shadow:0 2px 10px rgba(0,0,0,.08); }
+  .upsell-check:focus + .custom-check { outline:2px solid transparent; box-shadow:0 0 0 3px rgba(0,0,0,.2); }
+  .upsell-check:active + .custom-check { transform:scale(.96); }
+  .upsell-check:checked + .custom-check { border-color:#111; background:#fff; }
+  .custom-check::after { content:""; position:absolute; left:6px; top:2px; width:6px; height:12px; border-right:2px solid #111; border-bottom:2px solid #111; transform:rotate(45deg); opacity:0; transition:opacity .15s ease-in-out; }
+  .upsell-check:checked + .custom-check::after { opacity:1; }
+  .upsell-badge-soldout { font-size:.74rem; padding:.25rem .5rem; border-radius:999px; background:rgba(0,0,0,.06); color:rgba(0,0,0,.7); text-align:center; display:inline-block; min-width:32px; }
+  .upsell-placeholder { width:100%; aspect-ratio:4/3; border-radius:10px; background:repeating-linear-gradient(45deg, rgba(0,0,0,.04), rgba(0,0,0,.04) 10px, rgba(0,0,0,.08) 10px, rgba(0,0,0,.08) 20px); }
+  @media (max-width: 640px){
+    .upsell-card { grid-template-columns: 38px minmax(100px, 160px) 1fr; }
+    .upsell-images { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>

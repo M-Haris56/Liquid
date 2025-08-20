@@ -481,15 +481,42 @@
               {%- when 'variant_picker' -%}
                 {% render 'product-variant-picker', product: product, block: block, product_form_id: product_form_id %}
 
-                            {%- when 'buy_buttons' -%}
-                                {%- render 'buy-buttons',
-                              block: block,
-                              product: product,
-                              product_form_id: product_form_id,
-                              section_id: section.id,
-                              show_pickup_availability: true
-                        -%}
+                        {%- when 'buy_buttons' -%}
+                      {%- render 'buy-buttons',
+                        block: block,
+                        product: product,
+                        product_form_id: product_form_id,
+                        section_id: section.id,
+                        show_pickup_availability: true
+                      -%}
+                            
+                {% comment %} {%- render 'my-second-upsell', product: product, section_id: section.id -%}
 
+                  {%- comment -%} Simple gallery for CURRENT product (not upsell) {%- endcomment -%}
+                  {% comment %} {%- assign pimgs = product.media | where: 'media_type', 'image' -%} {% endcomment %}
+                  {% comment %} {%- if pimgs == blank and product.images -%}{%- assign pimgs = product.images -%}{%- endif -%}
+
+                  {%- if pimgs and pimgs.size > 0 -%}
+                    <ul class="simple-product-gallery" role="list">
+                      {%- for m in pimgs limit: 8 -%}
+                        {%- assign gi = m.preview_image | default: m -%}
+                        <li>
+                          <img src="{{ gi | image_url: width: 200 }}" alt="{{ product.title | escape }}">
+                        </li>
+                      {%- endfor -%}
+                    </ul>
+                  {%- endif -%} {% endcomment %}
+{% comment %} 
+  <style>
+    .simple-product-gallery { display:flex; flex-wrap:wrap; gap:.5rem; margin-top:1rem; padding:0; list-style:none; }
+    .simple-product-gallery li { margin:0; }
+    .simple-product-gallery img {
+      width:90px; height:90px; object-fit:cover; border-radius:10px;
+      border:1px solid rgba(0,0,0,.08); display:block;
+    }
+  </style> {% endcomment %} {% endcomment %}
+
+                      
               {%- when 'rating' -%}
                 {%- if product.metafields.reviews.rating.value != blank -%}
                   <div class="rating-wrapper">
@@ -686,7 +713,16 @@
           {%- unless upsell_rendered -%}
             {% render 'my-upsell' %}
           {%- endunless -%}
+               {% for product in collection.products %}
+              {% render 'my-second-upsell', product: product %}
+               {% endfor %}
 
+
+               
+           {% render 'my-second-upsell', product: card_product %}  
+
+          {% render 'my-second-upsell', product: product %} 
+          
           <a href="{{ product.url }}" class="link product__view-details animate-arrow">
             {{ 'products.product.view_full_details' | t }}
             {{- 'icon-arrow.svg' | inline_asset_content -}}

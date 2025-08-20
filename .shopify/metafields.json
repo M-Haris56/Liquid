@@ -400,6 +400,16 @@
         "name": "product_reference",
         "category": "REFERENCE"
       }
+    },
+    {
+      "key": "my_second_upsell",
+      "namespace": "custom",
+      "name": "my-second-upsell",
+      "description": "",
+      "type": {
+        "name": "list.product_reference",
+        "category": "REFERENCE"
+      }
     }
   ],
   "variant": [
