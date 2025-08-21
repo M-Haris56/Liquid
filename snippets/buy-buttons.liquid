@@ -73,7 +73,7 @@
           <button
             id="ProductSubmitButton-{{ section_id }}"
             type="submit"
-            name="add"
+            name="add"  
             class="product-form__submit button button--full-width {% if show_dynamic_checkout %}button--secondary{% else %}button--primary{% endif %}"
             {% if product.selected_or_first_available_variant.available == false
               or quantity_rule_soldout
@@ -149,3 +149,44 @@
     <script src="{{ 'pickup-availability.js' | asset_url }}" defer="defer"></script>
   {%- endif -%}
 </div>
+{%- comment -%} Upsell from product metafield: custom.product_checkbox (List of products) {%- endcomment -%}
+{%- assign upsell_products = product.metafields.custom.product_checkbox.value -%}
+
+
+  <div class="upsell" id="upsell-{{ section.id }}">
+    <h3>You may also like</h3>
+
+    <div class="upsell-grid">
+      {%- for p in upsell_products -%}
+        {%- assign upsell_variant = p.selected_or_first_available_variant -%}
+        <label class="upsell-item">
+          <input
+            type="checkbox"
+            class="upsell-check"
+            value="{{ upsell_variant.id }}"
+            {% unless upsell_variant and upsell_variant.available %}disabled{% endunless %}
+          >
+          <div class="upsell-title">
+            <p>{{ p.title }}</p>
+            <p class="sub-price">{{p.price | money }}</p>
+          </div>
+          <div class="upsell-media">
+            {%- if p.featured_image -%}
+              <img
+                src="{{ p.featured_image | image_url: width: 400 }}"
+                alt="{{ p.featured_image.alt | default: p.title | escape }}"
+                loading="lazy">
+            {%- else -%}
+              {{ 'product-1' | placeholder_svg_tag: 'placeholder-svg' }}
+            {%- endif -%}
+          </div>
+          {%- unless upsell_variant and upsell_variant.available -%}
+            <small class="upsell-badge">Sold out</small>
+          {%- endunless -%}
+        </label>
+      {%- endfor -%}
+    </div>
+  </div>
+
+
+
