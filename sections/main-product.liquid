@@ -676,6 +676,7 @@
                 {% render 'icon-with-text', block: block %}
             {%- endcase -%}
           {%- endfor -%}
+         
           <a href="{{ product.url }}" class="link product__view-details animate-arrow">
             {{ 'products.product.view_full_details' | t }}
             {{- 'icon-arrow.svg' | inline_asset_content -}}
@@ -737,36 +738,328 @@
     </script>
   </div>
 </product-info>
+ {% render 'sticky-add-to-cart', section_id: section.id, product: product, show_dynamic_checkout: section.settings.show_dynamic_checkout %}
+
+
+
+
+  <style> 
+  .sr-only{
+      position:absolute;
+      width:1px;
+      height:1px;
+      padding:0;
+      margin:-1px;
+      overflow:hidden;
+      clip:rect(0,0,0,0);
+      white-space:nowrap;
+      border:0
+  }
+  .hw-sticky-atc{
+      position:fixed;
+      left:0;
+      right:0;
+      z-index:9999;
+      background:var(--color-background,#fff);
+      border-top:1px solid rgba(0,0,0,.08);
+      transition:transform .28s ease, box-shadow .28s ease;
+      box-shadow:0 -12px 30px rgba(0,0,0,.06)
+  }
+  .hw-sticky-atc--bottom{
+      bottom:0;
+      transform:translateY(110%)
+  }
+  .hw-sticky-atc--bottom.is-visible{
+      transform:translateY(0)
+  }
+  .hw-sticky-atc--top{
+      top:var(--hw-sticky-top,0);
+      transform:translateY(-110%)
+  }
+  .hw-sticky-atc--top.is-visible{
+      transform:translateY(0)
+  }
+  .hw-sticky-atc__inner{
+      max-width:var(--page-width,1200px);
+      margin:0 auto;
+      padding:10px 14px;
+      display:flex;
+      align-items:center;
+      gap:12px
+  }
+  .hw-sticky-atc__media img{
+      display:block;
+      width:60px;
+      height:60px;
+      object-fit:cover;
+      border-radius:10px
+  }
+  .hw-sticky-atc__meta{
+      min-width:0;
+      flex:1
+  }
+  .hw-sticky-atc__title{
+      font-size:14px;
+      line-height:1.25;
+      font-weight:600;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      margin-bottom:4px
+  }
+  .hw-sticky-atc__price{
+      font-weight:700;
+      font-size:14px
+  }
+  .hw-sticky-atc__form{
+      display:flex;
+      align-items:center;
+      gap:8px
+  }
+  .hw-sticky-atc__qty{
+      width:76px;
+      padding:.5rem;
+      border:1px solid rgba(0,0,0,.15);
+      border-radius:10px
+  }
+  .hw-sticky-atc__submit{
+      white-space:nowrap;
+      border-radius:999px;
+      padding:.7rem 1.1rem
+  }
+  /* Optional: ensure nothing is hidden behind the bar when visible */
+  body.hw-has-sticky-atc--bottom{
+      scroll-padding-bottom:88px
+  }
+  body.hw-has-sticky-atc--top{
+      scroll-padding-top:88px
+  }
+  @media (min-width: 750px){
+      .hw-sticky-atc__title{
+          font-size:15px
+      }
+      .hw-sticky-atc__price{
+          font-size:15px
+      }
+  }
+ </style>
+
+
+<script>
+(function(){
+  var sectionId = {{ section_id | json }};
+  var sticky    = document.getElementById('HWStickyATC-' + sectionId);
+  if (!sticky) return;
+
+  // --- Elements inside sticky
+  var stickyVariantInput = sticky.querySelector('[data-hw-sticky-variant-id]');
+  var stickyPrice        = sticky.querySelector('[data-hw-sticky-price]');
+  var stickyQty          = sticky.querySelector('[data-hw-sticky-qty]');
+  var stickySubmit       = sticky.querySelector('[data-hw-sticky-submit]');
+
+  // --- Liquid data
+  var productData = {{ product | json }};
+  var moneyFormat = {{ shop.money_format | json }};
+
+  function formatMoney(cents){
+    try{
+      if (window.Shopify && typeof Shopify.formatMoney === 'function'){
+        return Shopify.formatMoney(cents, moneyFormat);
+      }
+    }catch(_) {}
+    var v = (Number(cents || 0)/100).toFixed(2);
+    return moneyFormat
+      .replace('{{amount_with_comma_separator}}', v.replace('.', ','))
+      .replace('{{ amount_with_comma_separator }}', v.replace('.', ','))
+      .replace('{{amount_no_decimals}}', String(Math.round(Number(cents||0)/100)))
+      .replace('{{ amount_no_decimals }}', String(Math.round(Number(cents||0)/100)))
+      .replace('{{amount}}', v)
+      .replace('{{ amount }}', v);
+  }
+
+  function getCurrentVariant(mainVariantInput){
+    var id = mainVariantInput && mainVariantInput.value
+      ? Number(mainVariantInput.value)
+      : (productData.selected_or_first_available_variant && productData.selected_or_first_available_variant.id);
+    var list = (productData && productData.variants) || [];
+    return list.find(function(x){ return x.id === id; }) || list[0] || null;
+  }
+
+  // ---- SCOPE EVERYTHING TO THIS SECTION to avoid picking buttons from elsewhere
+  var sectionRoot = document.getElementById('shopify-section-' + sectionId) || document;
+
+  function qWithinSection(sel){
+    return sectionRoot.querySelector(sel);
+  }
+  function qaWithinSection(sel){
+    return Array.from(sectionRoot.querySelectorAll(sel));
+  }
+
+  function findMainSubmit(){
+    // Prefer the exact id first
+    var byId = qWithinSection('#ProductSubmitButton-' + sectionId);
+    if (byId) return byId;
+
+    // Then scoped product form submit inside this section only
+    var candidates = qaWithinSection('form[action="/cart/add"] .product-form__submit[name="add"]');
+    // pick first visible
+    var visible = candidates.filter(function(el){ return !!(el.offsetParent); });
+    return visible[0] || candidates[0] || null;
+  }
+  function findMainForm(btn){
+    return (btn && btn.closest('form')) || qWithinSection('form[action="/cart/add"]');
+  }
+  function findMainVariantInput(form){
+    return form && form.querySelector('input[name="id"]');
+  }
+  function findMainQtyInput(form){
+    return form && form.querySelector('input[name="quantity"]');
+  }
+
+  // state
+  var mainSubmitBtn, mainForm, mainVariantInput, mainQtyInput, io, fallbackScrollHandler;
+
+  function syncFromMain(){
+    var variant = getCurrentVariant(mainVariantInput);
+    if (variant){
+      if (stickyVariantInput) stickyVariantInput.value = variant.id;
+      if (stickyPrice) stickyPrice.innerHTML = formatMoney(variant.price);
+      if (stickySubmit){
+        stickySubmit.disabled = !variant.available;
+        stickySubmit.textContent = variant.available
+          ? {{ 'products.product.add_to_cart' | t | json }}
+          : {{ 'products.product.sold_out'   | t | json }};
+      }
+      var min  = (variant.quantity_rule && variant.quantity_rule.min) || 1;
+      var step = (variant.quantity_rule && variant.quantity_rule.increment) || 1;
+      if (stickyQty){
+        stickyQty.min  = min;
+        stickyQty.step = step;
+        if (!stickyQty.value) stickyQty.value = String(min);
+      }
+    }
+    if (mainQtyInput && stickyQty){
+      stickyQty.value = mainQtyInput.value || stickyQty.min || 1;
+    }
+  }
+
+  function showSticky(show){
+    if (show){
+      sticky.classList.add('is-visible');
+      sticky.setAttribute('aria-hidden','false');
+      var pos = (sticky.dataset.position || 'bottom') === 'top' ? 'top' : 'bottom';
+      sticky.classList.toggle('hw-sticky-atc--top',    pos === 'top');
+      sticky.classList.toggle('hw-sticky-atc--bottom', pos === 'bottom');
+      document.body.classList.toggle('hw-has-sticky-atc--top',    pos === 'top');
+      document.body.classList.toggle('hw-has-sticky-atc--bottom', pos === 'bottom');
+    } else {
+      sticky.classList.remove('is-visible');
+      sticky.setAttribute('aria-hidden','true');
+      document.body.classList.remove('hw-has-sticky-atc--top','hw-has-sticky-atc--bottom');
+    }
+  }
+
+  function isInViewportWithBuffer(el, bufferBottomPx){
+    if (!el) return false;
+    var r  = el.getBoundingClientRect();
+    var vw = window.innerWidth  || document.documentElement.clientWidth;
+    var vh = window.innerHeight || document.documentElement.clientHeight;
+    // shrink viewport height by bottom buffer so if the button is under the sticky bar,
+    // we still treat it as "out of view"
+    var effectiveVH = Math.max(0, vh - (bufferBottomPx || 0));
+    return (r.bottom > 0) && (r.right > 0) && (r.left < vw) && (r.top < effectiveVH);
+  }
+
+  function observe(){
+    // buffer equals sticky height (fallback 88px)
+    var buffer = sticky.offsetHeight || 88;
+
+    // Initial state
+    showSticky(!isInViewportWithBuffer(mainSubmitBtn, buffer));
+
+    // Re-sync on variant changes
+    if (mainVariantInput){
+      mainVariantInput.addEventListener('change', syncFromMain);
+    }
+    document.addEventListener('variant:change',  syncFromMain, true);
+    document.addEventListener('variant:changed', syncFromMain, true);
+
+    // IntersectionObserver with rootMargin to account for sticky height
+    if (mainSubmitBtn && 'IntersectionObserver' in window){
+      io && io.disconnect();
+      io = new IntersectionObserver(function(entries){
+        entries.forEach(function(entry){
+          // If it is NOT intersecting within the shrunken viewport, show sticky
+          showSticky(!entry.isIntersecting);
+        });
+      }, {
+        // subtract sticky height from bottom so button counts as "out" earlier
+        root: null,
+        rootMargin: '0px 0px -' + buffer + 'px 0px',
+        threshold: 0
+      });
+      io.observe(mainSubmitBtn);
+    } else {
+      // Fallback: simple scroll threshold
+      fallbackScrollHandler = function(){
+        var scrolled = window.pageYOffset || document.documentElement.scrollTop;
+        showSticky(scrolled > 300);
+      };
+      window.addEventListener('scroll', fallbackScrollHandler, { passive: true });
+    }
+  }
+
+  function unobserve(){
+    if (io){ io.disconnect(); io = null; }
+    if (fallbackScrollHandler){
+      window.removeEventListener('scroll', fallbackScrollHandler);
+      fallbackScrollHandler = null;
+    }
+  }
+
+  function bindMain(){
+    mainSubmitBtn    = findMainSubmit();
+    mainForm         = findMainForm(mainSubmitBtn);
+    mainVariantInput = findMainVariantInput(mainForm);
+    mainQtyInput     = findMainQtyInput(mainForm);
+
+    // sync fields
+    syncFromMain();
+
+    // qty two-way sync
+    if (mainQtyInput && stickyQty){
+      stickyQty.oninput   = function(){ mainQtyInput.value  = stickyQty.value; };
+      mainQtyInput.oninput= function(){ stickyQty.value     = mainQtyInput.value; };
+    }
+
+    // re-observe
+    unobserve();
+    observe();
+  }
+
+  // Re-bind on Shopify section reloads / viewport changes
+  ['shopify:section:load','shopify:section:unload','DOMContentLoaded','load','resize','orientationchange'].forEach(function(evt){
+    window.addEventListener(evt, function(){
+      clearTimeout(window.__hw_atc_t__);
+      window.__hw_atc_t__ = setTimeout(bindMain, 60);
+    }, true);
+  });
+
+  // Start
+  bindMain();
+})();
+</script>
+
+
 
 <style> 
- /* .upsell-grid{
+ 
+.upsell-grid{
     display: flex;
     flex-direction: column;
-    justify-content: center;
     gap: 5px;
-  }  */
-    .upsell-grid{
-        display: flex;
-        flex-direction: column;
-        gap: 5px;
-        }
- /* .upsell-item{
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: center;
-    position:relative;
-    text-decoration:none;
-    color:inherit;
-    border:1px solid rgba(0,0,0,.08);
-    border-radius:10px;
-    overflow:hidden;
-    padding-bottom:-0.5rem;
-    cursor:pointer
-    height: 100px;
-    width: 286px;
-    background: aliceblue; */
-/* } */
+    }
+ 
 .upsell-item{
     display: flex;
     justify-content: right;
@@ -780,54 +1073,37 @@
     border-radius:10px;
     overflow:hidden;
     cursor:pointer
-     overflow:hidden;
-      background: aliceblue;
+    overflow:hidden;
+    background: aliceblue;
  }       
  .upsell-item input.upsell-check{
-    position: absolute;
-    top: 34px;
-    left: 8px;
-    z-index: 2;
-    width: 18px;
-    height: 18px;
+    width: 5%;
 }
 .upsell-media{
     display: flex;
     align-items: center;
     justify-content: center;
+    width: 20%;
 }
- /* .upsell-media img{
-    display:block;
-    width:100%;
-    height:auto;
-    aspect-ratio:0/1;
-    margin-left: -22px !important;
-    padding-top: 12px;
-    padding-bottom: 12px;
-    border-radius: 34%;
-} */
+
  .upsell-media img{
-    width: 93px;
-    height: 76px;
-    border-radius: 20px;
-    margin-right: 14px;
+    width: 100%;
+    height: 100%;
+    border-radius: 10px;
+    object-fit: cover;
     
  }
- /* .upsell-title{
-    padding: 0px 70px;
-    font-size: 0.95rem;
-    line-height: 1.2;
-} */
- .upsell-title{
+
+ .upsell-title {
     justify-content: center;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    width: 43%;
- }
+    width: 75%;
+}
 .upsell-title p {
-    width: 88px;
-    font-size: 11px;
+    font-size: 16px;
+    margin: 0px;
 }
 .upsell-title .sub-price{
   font-weight: bold;
@@ -856,13 +1132,20 @@
 
 @media (min-width: 601px) and (max-width: 1024px) {
   .upsell-item {
-    flex: 1 1 calc(50% - 20px);
+    width: 100%;
+    display: flex;
+    flex-direction: row;
   }
 }
 
 @media (min-width: 1025px) {
   .upsell-item {
-    flex: 1 1 calc(33.33% - 20px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    padding: 5px 10px;
+    }
   }
 }
  </style>

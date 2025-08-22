@@ -1,0 +1,60 @@
+{%- comment -%}
+{% render 'sticky-add-to-cart', section_id: section.id, product: product, show_dynamic_checkout: section.settings.show_dynamic_checkout %}
+Notes:
+- Appears when your default Add to Cart button (#ProductSubmitButton-{{ section_id }}) scrolls out of view.
+- Mirrors the currently selected variant + quantity from the main product form.
+- Submits directly to /cart/add from the sticky bar.
+{%- endcomment -%}
+
+
+<div id="HWStickyATC-{{ section_id }}" class="hw-sticky-atc hw-sticky-atc--bottom" data-section-id="{{ section_id }}" data-position="bottom" aria-hidden="true">
+<div class="hw-sticky-atc__inner">
+<a class="hw-sticky-atc__media" href="#ProductSubmitButton-{{ section_id }}" aria-label="Back to product">
+{%- assign sticky_image = product.selected_or_first_available_variant.featured_image | default: product.featured_image -%}
+{%- if sticky_image -%}
+<img
+srcset="{{ sticky_image | image_url: width: 120 }} 120w, {{ sticky_image | image_url: width: 240 }} 240w"
+sizes="60px"
+src="{{ sticky_image | image_url: width: 120 }}"
+width="60" height="60"
+alt="{{ product.title | escape }}"
+loading="lazy"
+>
+{%- endif -%}
+</a>
+
+
+<div class="hw-sticky-atc__meta">
+<div class="hw-sticky-atc__title">{{ product.title }}</div>
+<div class="hw-sticky-atc__price" data-hw-sticky-price>
+{{ product.selected_or_first_available_variant.price | money }}
+</div>
+</div>
+
+
+<form id="HWStickyATCForm-{{ section_id }}" action="/cart/add" method="post" class="hw-sticky-atc__form" novalidate>
+<input type="hidden" name="id" value="{{ product.selected_or_first_available_variant.id }}" data-hw-sticky-variant-id>
+
+
+{%- assign min_qty = product.selected_or_first_available_variant.quantity_rule.min | default: 1 -%}
+{%- assign step_qty = product.selected_or_first_available_variant.quantity_rule.increment | default: 1 -%}
+<label for="HWStickyATCQty-{{ section_id }}" class="sr-only">{{ 'products.product.quantity.label' | t }}</label>
+<input id="HWStickyATCQty-{{ section_id }}" name="quantity" type="number"
+class="hw-sticky-atc__qty"
+min="{{ min_qty }}" step="{{ step_qty }}" value="{{ min_qty }}"
+data-hw-sticky-qty>
+
+
+<button type="submit" name="add"
+class="hw-sticky-atc__submit button {% if show_dynamic_checkout %}button--secondary{% else %}button--primary{% endif %}"
+data-hw-sticky-submit
+{%- if product.selected_or_first_available_variant.available == false -%}disabled{%- endif -%}>
+{%- if product.selected_or_first_available_variant.available -%}
+{{ 'products.product.add_to_cart' | t }}
+{%- else -%}
+{{ 'products.product.sold_out' | t }}
+{%- endif -%}
+</button>
+</form>
+</div>
+</div>
