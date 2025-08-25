@@ -52,43 +52,76 @@
     </div>
   </div>
 
-  <style>
-    .sticky-atc {
-      position: fixed;
-      left: 0; right: 0;
-      top: -100%;        /* start hidden above */
-      bottom: auto;      /* we want TOP bar */
-      display: none;
-      opacity: 0;
-      transform: translateY(-6px);
-      transition: top .25s ease, opacity .2s ease, transform .25s ease;
-      z-index: 60;
-    }
-    .sticky-atc.is-visible {
-      top: 0;            /* requested: top:0 */
-      bottom: auto;
-      display: block;    /* requested: display:block */
-      opacity: 1;        /* requested: opacity:1 */
-      transform: translateY(0);
-    }
-    .sticky-atc__inner {
-      display: flex; align-items: center; justify-content: space-between;
-      gap: .75rem; padding: .75rem 1rem;
-      background: var(--color-background, #fff);
-      box-shadow: 0 8px 24px rgba(0,0,0,.08);
-      border-bottom: 1px solid rgba(0,0,0,.06);
-    }
-    .sticky-atc__left { display: flex; align-items: center; gap: .75rem; min-width: 0; }
-    .sticky-atc__img { width: 48px; height: 48px; object-fit: cover; border-radius: .5rem; }
-    .sticky-atc__meta { display: grid; gap: .1rem; min-width: 0; }
-    .sticky-atc__title {
-      font-weight: 600; font-size: .95rem; line-height: 1.2;
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 60vw;
-    }
-    .sticky-atc__price { font-weight: 600; }
-    .sticky-atc__compare { opacity: .6; margin-right: .35rem; }
-    .sticky-atc__right { margin-left: auto; }
-  </style>
+ <style>
+  .sticky-atc {
+    position: fixed;
+    left: 0; right: 0;
+    top: -100%;        /* start hidden above */
+    bottom: auto;      /* we want TOP bar */
+    display: none;
+    opacity: 0;
+    transform: translateY(-6px);
+    transition: top .25s ease, opacity .2s ease, transform .25s ease;
+    z-index: 60;
+  }
+  .sticky-atc.is-visible {
+    top: 0;            
+    bottom: auto;
+    display: block;    
+    opacity: 1;        
+    transform: translateY(0);
+  }
+  .sticky-atc__inner {
+    display: flex; align-items: center; 
+    justify-content: space-between;
+    gap: .75rem; padding: .75rem 4rem;
+    background: aliceblue;
+    box-shadow: 0 8px 24px rgba(0,0,0,.08);
+    border-bottom: 1px solid rgba(0,0,0,.06);
+  }
+  .sticky-atc__left { display: flex; align-items: center; gap: .75rem; min-width: 0; }
+  .sticky-atc__img { width: 90px; height: 90px; object-fit: cover; border-radius: .5rem; }
+  .sticky-atc__meta { display: grid; gap: .1rem; min-width: 0; }
+  .sticky-atc__title {
+    font-weight: 600; font-size: 1.95rem; line-height: 1.2;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 60vw;
+  }
+  .sticky-atc__price { font-weight: 600; }
+  .sticky-atc__compare { opacity: .6; margin-right: .35rem; }
+  .sticky-atc__right { margin-left: auto; }
+  .sticky-atc__right button{
+      padding: 5px 73px;
+  } 
+
+  /* ========== RESPONSIVE ========== */
+
+  /* Tablet */
+  @media (max-width: 1024px) {
+    .sticky-atc__inner { padding: .75rem 2rem; }
+    .sticky-atc__img { width: 70px; height: 70px; }
+    .sticky-atc__title { font-size: 1.4rem; max-width: 55vw; }
+    .sticky-atc__right button { padding: 5px 50px; }
+  }
+
+  /* Mobile */
+  @media (max-width: 768px) {
+    .sticky-atc__inner { padding: .5rem 1rem; gap: .5rem; }
+    .sticky-atc__img { width: 55px; height: 55px; }
+    .sticky-atc__title { font-size: 1.1rem; max-width: 50vw; }
+    .sticky-atc__price { font-size: .95rem; }
+    .sticky-atc__right button { padding: 5px 25px; font-size: .9rem; }
+  }
+
+  /* Small phones */
+  @media (max-width: 480px) {
+    .sticky-atc__inner { flex-direction: row; align-items: center; padding: .75rem; }
+    .sticky-atc__left { width: 52%; }
+    .sticky-atc__title { max-width: 100%; font-size: 1.5rem; }
+    .sticky-atc__right { width: 48%; margin-left: 0; }
+    .sticky-atc__right button { width: 100%; padding: .75rem; font-size: 1rem; }
+  }
+</style>
+
 
   <script>
     (function() {
@@ -208,3 +241,4 @@
     })();
   </script>
 {%- endif -%}
+"sirf responsive kr k do or koi changes na ho"
